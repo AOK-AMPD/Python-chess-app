@@ -109,23 +109,9 @@ class Player:
         if abs(x - self.pos[0]) <= 100 and abs(y - self.pos[1]) <= 100: 
             self.pos = (x,y)
 
-    def promote(self,pos):
-        for button in buttons:
-            button.draw()
+    def promote(self,choice):
+        self.type = choice
         
-        for button in buttons:
-            if button.is_clicked(pos):
-                if button.text == 'P. Queen':
-                    type = 'queen'
-                elif button.text == 'P. Rook':
-                    type = 'rook'
-                elif button.text == 'P. Bishop':
-                    type = 'bishop'
-                elif button.text == 'P. Knight':
-                    type = 'knight'
-        
-        self.type = type
-
     def move_pawn(self, target): # Pawn movement 
         x = self.pos[0]
         y = (100 * (target[1] // 100)) + 50 
@@ -139,7 +125,10 @@ class Player:
                     self.pos = (x, y)
 
             if self.pos[1]==50:
-                promote = True
+                buttons.append(button1)
+                buttons.append(button2)
+                buttons.append(button3)
+                buttons.append(button4)
 
         elif self.color==(255,255,255):
             if self.pos[1]==150:
@@ -150,7 +139,10 @@ class Player:
                     self.pos(x,y)
 
             if self.pos[1]==750:
-                promote = True
+                buttons.append(button1)
+                buttons.append(button2)
+                buttons.append(button3)
+                buttons.append(button4)
 
     def move(self,target,players):
 
@@ -171,13 +163,33 @@ class Player:
             if player.pos == self.pos and player.color != self.color:
                 players.remove(player)
 
-    def is_checked(self): # Return true if the king is in check, otherwise return false
-        pass
+    def is_checked(self, players):
+        for player in players:
+            if player.color != self.color:
+                if player.can_attack(self.pos):
+                    return True
+        return False
 
-button1 = Button(800,0,150,50,(100,100,100),'P. Queen')
-button2 = Button(800,50,150,50,(100,100,100),'P. Knight')
-button3 = Button(800,100,150,50,(100,100,100),'P. Bishop')
-button4 = Button(800,150,150,50,(100,100,100),'P. Rook')
+    def can_attack(self, target_pos):
+        # This function checks if the current piece can attack the target position
+        if self.type == 'rook':
+            return self.pos[0] == target_pos[0] or self.pos[1] == target_pos[1]
+        elif self.type == 'bishop':
+            return abs(self.pos[0] - target_pos[0]) == abs(self.pos[1] - target_pos[1])
+        elif self.type == 'queen':
+            return (self.pos[0] == target_pos[0] or self.pos[1] == target_pos[1] or 
+                    abs(self.pos[0] - target_pos[0]) == abs(self.pos[1] - target_pos[1]))
+        elif self.type == 'knight':
+            return (abs(self.pos[0] - target_pos[0]), abs(self.pos[1] - target_pos[1])) in [(200, 100), (100, 200)]
+        elif self.type == 'pawn':
+            direction = 100 * self.direction
+            return self.pos[0] == target_pos[0] and self.pos[1] + direction == target_pos[1]
+        return False
+
+button1 = Button(800,0,150,50,(100,100,100),'queen')
+button2 = Button(800,50,150,50,(100,100,100),'knight')
+button3 = Button(800,100,150,50,(100,100,100),'bishop')
+button4 = Button(800,150,150,50,(100,100,100),'rook')
 
 players = [
     Player(screen, WHITE, (50, 50), 'rook',0),
@@ -188,7 +200,7 @@ players = [
     Player(screen, BLACK, (650,750),'pawn',-1)
 ]
 
-buttons = [button1,button2,button3,button4]
+buttons = []
 
 is_running = True
 
@@ -209,6 +221,9 @@ while is_running: #Game loop
     for player in players:
         player.draw()
 
+    for button in buttons:
+        button.draw(screen)
+
     for event in pg.event.get(): # event handler
         if event.type == pg.KEYDOWN:
             print(event.key)
@@ -228,11 +243,31 @@ while is_running: #Game loop
                 selected_player.move(pos,players)
                 selected_player=None
 
-            if promote == True:
-                for player in players:
-                    if player.type == 'pawn':
-                        player.promote(pg.mouse.get_pos())
-                        promote == False
+            if buttons:
+                for button in buttons:
+                    if button.is_clicked(pos):
+                        choice = button.text
+                        for player in players:
+                            if player.color==(0,0,0):
+                                if player.type=='pawn' and player.pos[1]==50:
+                                    player.promote(choice)
+                                    selected_player=None
+                                    buttons.remove(button1)
+                                    buttons.remove(button2)
+                                    buttons.remove(button3)
+                                    buttons.remove(button4)
+                            elif player.color==WHITE:
+                                if player.type=='pawn' and player.pos[1]==750:
+                                    player.promote(choice)
+                                    selected_player=None
+                                    buttons.remove(button1)
+                                    buttons.remove(button2)
+                                    buttons.remove(button3)
+                                    buttons.remove(button4)
+
+    for player in players:
+        if player.type == 'king' and player.is_checked(players):
+            print("King is in check!")
 
     pg.display.update()
     
