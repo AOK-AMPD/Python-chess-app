@@ -83,7 +83,7 @@ class Player:
         self.type=type
         self.font=pg.font.Font(None,36)
         self.direction=direction
-        self.image = self.piece_images[f"{'white' if color == WHITE else 'black'}_{type}"]
+        self.image = self.piece_images[f"{'white' if color == WHITE else 'black'}_{self.type}"]
     
     def draw(self):
         # Calculate the top-left corner position of the image
@@ -160,8 +160,9 @@ class Player:
 
     def promote(self,choice):
         self.type = choice
+        self.image = self.piece_images[f"{'white' if self.color == WHITE else 'black'}_{self.type}"]
         
-    def move_pawn(self, target): # Pawn movement 
+    def move_pawn(self, target, players): # Pawn movement 
         x_target = (100 * (target[0] // 100)) + 50  # Calculate target x position
         y_target = (100 * (target[1] // 100)) + 50  # Calculate target y position
 
@@ -180,8 +181,27 @@ class Player:
             print("Moving pawn one square.")
             self.pos = (x_target, y_target)
         else:
-            print("Invalid pawn move.")
+            for player in players:
+                take_pos=[
+                    (self.pos[0]+100,self.pos[1]-100),
+                    (self.pos[0]-100,self.pos[1]-100)
+                ]
+                for i in range(len(take_pos)):
+                    if player.pos == take_pos[i]:
+                        self.pos = (x_target,y_target)
 
+        if self.color == (0,0,0):
+            if self.pos[1] == 50:
+                buttons.append(button1)
+                buttons.append(button2)
+                buttons.append(button3)
+                buttons.append(button4)
+        else:
+            if self.pos[1] == 750:
+                buttons.append(button1)
+                buttons.append(button2)
+                buttons.append(button3)
+                buttons.append(button4)
 
     def move(self,target,players):
 
@@ -196,7 +216,7 @@ class Player:
         elif self.type=='king':
             self.move_king(target,players)
         elif self.type=='pawn':
-            self.move_pawn(target)
+            self.move_pawn(target,players)
 
         for player in players:
             if player.pos == self.pos and player.color != self.color:
